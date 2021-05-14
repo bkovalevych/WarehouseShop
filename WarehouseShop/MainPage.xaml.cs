@@ -20,6 +20,8 @@ namespace WarehouseShop
     using Entities;
     using ViewModels;
     using Helpers;
+    using Microsoft.Toolkit.Uwp.UI.Controls;
+    using System.Collections.ObjectModel;
 
     /// <summary>
     /// Пустая страница, которую можно использовать саму по себе или для перехода внутри фрейма.
@@ -182,6 +184,37 @@ namespace WarehouseShop
             await ToExcel.Some(vm.Reports);
         }
 
+        //private void dg_Sorting(object sender, DataGridColumnEventArgs e)
+        //{
+        //    //Use the Tag property to pass the bound column name for the sorting implementation 
+        //    if(e.Column.Tag.ToString() == "Range")
+        //    {
+        //        //Implement sort on the column "Range" using LINQ
+        //        if(e.Column.SortDirection == null || e.Column.SortDirection == DataGridSortDirection.Descending)
+        //        {
+        //            dg.ItemsSource = new ObservableCollection(from item in _items
+        //                                                      orderby item.Range ascending
+        //                                                      select item);
+        //            e.Column.SortDirection = DataGridSortDirection.Ascending;
+        //        }
+        //        else
+        //        {
+        //            dg.ItemsSource = new ObservableCollection(from item in _items
+        //                                                      orderby item.Range descending
+        //                                                      select item);
+        //            e.Column.SortDirection = DataGridSortDirection.Descending;
+        //        }
+        //    }
+        //    // add code to handle sorting by other columns as required
 
+        //    // Remove sorting indicators from other columns
+        //    foreach(var dgColumn in dg.Columns)
+        //    {
+        //        if(dgColumn.Tag.ToString() != e.Column.Tag.ToString())
+        //        {
+        //            dgColumn.SortDirection = null;
+        //        }
+        //    }
+        //}
     }
 }

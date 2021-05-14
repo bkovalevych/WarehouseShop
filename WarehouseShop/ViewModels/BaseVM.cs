@@ -17,6 +17,7 @@ namespace WarehouseShop.ViewModels
     using Microsoft.Toolkit.Uwp.UI.Controls;
     using System.Windows.Input;
     using System.Text.RegularExpressions;
+    using System.Diagnostics;
 
     public class BaseVM : Observable
     {
@@ -612,7 +613,7 @@ namespace WarehouseShop.ViewModels
 
         private DataGridColumn BCol(string path, bool disableIt = false)
         {
-            DataGridTextColumn column = new DataGridTextColumn();
+            DataGridTextColumn column = new DataGridTextColumn() { CanUserSort = true};
             column.Binding = new Windows.UI.Xaml.Data.Binding() { Path = new PropertyPath(path) };
             column.Header = path;
             if(disableIt)
@@ -624,7 +625,7 @@ namespace WarehouseShop.ViewModels
         }
         private DataGridColumn BCol(string path, IEnumerable<string> variants, string header = null, bool disableIt = false)
         {
-            DataGridComboBoxColumn column = new DataGridComboBoxColumn();
+            DataGridComboBoxColumn column = new DataGridComboBoxColumn() { CanUserSort = true };
             column.Binding = new Windows.UI.Xaml.Data.Binding() { Path = new PropertyPath(path) };
             if(header == null)
             {
@@ -642,7 +643,7 @@ namespace WarehouseShop.ViewModels
 
         private DataGridColumn BCol(string path, IEnumerable<object> variants, string displayProp, string header, bool disableIt = false)
         {
-            DataGridComboBoxColumn column = new DataGridComboBoxColumn();
+            DataGridComboBoxColumn column = new DataGridComboBoxColumn() { CanUserSort = true };
             column.Binding = new Windows.UI.Xaml.Data.Binding() { Path = new PropertyPath(path) };
 
             column.Header = header;
@@ -656,6 +657,86 @@ namespace WarehouseShop.ViewModels
             return column;
         }
 
-        
+        public ICommand SortCommand => new RelayCommand(Sort);
+        private void Sort(object o)
+        {
+            if(o is DataGridColumnEventArgs e)
+            {
+                switch(selectedVariant.Variant)
+                {
+                    case "Good":
+                        switch(e.Column.Header.ToString())
+                        {
+                            case "GoodId":
+                                SortData(
+                                    Goods,
+                                    (o1, o2) => o1.GoodId > o2.GoodId ? 1 : -1,
+                                    (o1, o2) => o1.GoodId < o2.GoodId ? 1 : -1,
+                                    e.Column
+                                    );
+                                break;
+                            case "Name":
+                                SortData(Goods,
+                                    (o1, o2) => o1.Name.CompareTo(o2.Name),
+                                    (o1, o2) => o1.Name.CompareTo(o2.Name)*(-1),
+                                    e.Column
+                                    );
+                                break;
+                            case "Producer":
+                                SortData(Goods,
+                                    (o1, o2) => o1.Producer.CompareTo(o2.Producer),
+                                    (o1, o2) => o1.Producer.CompareTo(o2.Producer) * (-1),
+                                    e.Column
+                                    );
+                                break;
+                        }
+                          
+                            
+                        break;
+                }
+            }
+        }
+
+        private void SortData<T>(
+            ObservableCollection<T> collection, 
+            Comparison<T> compDesc, 
+            Comparison<T> compAsc,
+            DataGridColumn col)
+        {
+            var arr = new T[collection.Count];
+            collection.CopyTo(arr, 0);
+            if(col.SortDirection == null || col.SortDirection == DataGridSortDirection.Descending)
+            {
+                Array.Sort(arr, compAsc);
+                col.SortDirection = DataGridSortDirection.Ascending;
+            }
+            else
+            {
+                col.SortDirection = DataGridSortDirection.Descending;
+                Array.Sort(arr, compDesc);
+            } 
+            Goods.Clear();
+            Add(collection, arr);
+            
+        }
+
+        /*BCol("GoodId", true),
+                BCol("Name"),
+                BCol("Description"),
+                BCol("Producer"),
+                BCol("Measure", Constants.Measure),
+                BCol("Percent"),
+                BCol("Price")
+         * 
+         * 
+         * "Agent", Val = Agents },
+                new ItemChoose() {Variant = "Good", Val = Goods },
+                new ItemChoose() {Variant = "GoodOperation", Val = GoodOperations },
+                new ItemChoose() {Variant = "Operation", Val = Operations },
+                new ItemChoose() {Variant = "StockBalance", Val = StockBalances },
+                new ItemChoose() {Variant = "Warehouse", Val = Warehouses },
+                new ItemChoose() {Variant = "MinStock", Val = MinStockBalances},
+                new ItemChoose() {Variant = "Report", Val = Reports}
+         */
     }
 }

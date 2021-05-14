@@ -65,9 +65,14 @@
                            ItemsSource="{x:Bind vm.SelectedVariant.Val, Mode=TwoWay}" 
                            AutoGenerateColumns="False"
                            x:Name="mainGrid"
-                           
+                           CanUserSortColumns="True"
                            SelectedIndex="{x:Bind vm.SelectedGlobalRowIndex, Mode=TwoWay}"
                            SelectedItem="{x:Bind vm.SelectedRow, Mode=TwoWay}">
+            <interactivity:Interaction.Behaviors>
+                <interactions:EventTriggerBehavior EventName="Sorting">
+                    <interactions:InvokeCommandAction Command="{x:Bind vm.SortCommand}"/>
+                </interactions:EventTriggerBehavior>
+            </interactivity:Interaction.Behaviors>
             <controls:DataGrid.ContextFlyout>
                 <MenuFlyout>
                     <MenuFlyoutItem Text="Add" Icon="Add" Command="{x:Bind vm.AddEntityCommand}"/>

@@ -46,8 +46,8 @@
     <Grid RowSpacing="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="2*"/>
+            <RowDefinition Height="1*"/>
             <RowDefinition Height="auto"/>
         </Grid.RowDefinitions>
         <!--<ComboBox SelectedItem="{x:Bind vm.SelectedVariant, Mode=TwoWay}" ItemsSource="{x:Bind vm.Variants}" >
@@ -62,6 +62,7 @@
         </ListView>-->
         <ComboBox ItemsSource="{x:Bind vm.Variants}" SelectedItem="{x:Bind vm.SelectedVariant, Mode=TwoWay}"/>
         <controls:DataGrid Grid.Row="1"
+                           Grid.RowSpan="{x:Bind vm.RowSpan, Mode=OneWay}"
                            ItemsSource="{x:Bind vm.SelectedVariant.Val, Mode=TwoWay}" 
                            AutoGenerateColumns="False"
                            x:Name="mainGrid"

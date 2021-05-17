@@ -143,24 +143,40 @@ namespace WarehouseShop.Entities
                     return false;
                 }
             }
-            if (currentWarehouse == null && Warehouse == null)
+            if((currentWarehouse == null && Warehouse == null) || (Good == null && currentGood == null ))
             {
                 return true;
             }
-            var stock = (currentWarehouse ?? Warehouse).StockBalances.Where(o => Equals(o.Good, Good));
-            var countStock = stock.Select(o => o.Count).Sum();
-            
+            var noNullWarehouse = (currentWarehouse ?? Warehouse);
+            var noNullGood = (currentGood ?? Good);
+            int isSub = 1;
             if(currentCount < 0)
             {
+                isSub = -1;
                 currentCount = -currentCount;
+                if(noNullWarehouse.StockBalances.Where(o => Equals(o.Good, noNullGood)).Count() == 0)
+                {
+                    noNullWarehouse.StockBalances.Add(new StockBalance()
+                    {
+                        Count = 0,
+                        Good = noNullGood,
+                        GoodId = noNullGood.GoodId,
+                        Warehouse = noNullWarehouse,
+                        WarehouseId = noNullWarehouse.WarehouseId
+                    });
+                }
             }
-            double diff = count - currentCount;
+            var stock = noNullWarehouse.StockBalances.Where(o => Equals(o.Good, noNullGood));
+            var countStock = stock.Select(o => o.Count).Sum();
+            
+            
+            double diff = (count - currentCount) * isSub;
             if(diff + countStock < 0)
             {
                 diff = -countStock;
                 PopUp("На данном складе нет такого количества товара");
             }
-            count -= diff;
+            count -= diff * isSub;
             countStock += diff;
             stock.ToList().ForEach(o => o.Count = 0);
             if(stock.Count() > 0)

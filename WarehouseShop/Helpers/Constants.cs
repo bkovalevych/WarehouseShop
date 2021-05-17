@@ -14,7 +14,8 @@ namespace WarehouseShop.Helpers
 
         public static string MeasureVeight => " Кг";
         public static string MeasureCount => " шт.";
-        public static List<string> Measure => new List<string>() { MeasureCount, MeasureVeight };
+        public static string MeasureWidth => " м";
+        public static List<string> Measure => new List<string>() { MeasureCount, MeasureWidth, MeasureVeight };
 
         public static double DefaultPercent => 0.05;
 

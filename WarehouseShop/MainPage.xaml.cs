@@ -36,7 +36,8 @@ namespace WarehouseShop
 
             this.Loaded += MainPage_Loaded;
             vm = new BaseVM(Resources, mainGrid.Columns);
-            //AddData();
+            DeleteAll();
+            AddData();
         }
 
         private void MainPage_Loaded(object sender, RoutedEventArgs e)
@@ -49,18 +50,23 @@ namespace WarehouseShop
             {
                 List<Agent> agents = new List<Agent>() {
                     new Agent() { Code = "0000000001", Name = "ТОВ АГРОМОЛ", TypeAgent = Constants.TypeAgentLawEntity },
-                    new Agent() { Code = "0000000002", Name = "Фабрика Господар", TypeAgent = Constants.TypeAgentLawEntity }
+                    new Agent() { Code = "0000000002", Name = "Фабрика Господар", TypeAgent = Constants.TypeAgentLawEntity },
+                    new Agent() { Code = "0000000003", Name = "ФОП Лукачі", TypeAgent = Constants.TypeAgentPhisicEntity },
+                    new Agent() { Code = "0000000004", Name = "Фірма \"МЕД\"", TypeAgent = Constants.TypeAgentLawEntity },
+                    new Agent() { Code = "0000000005", Name = "ТОВ \"Хозяйкин дом\"", TypeAgent = Constants.TypeAgentPhisicEntity }
                 };
                 db.AddRange(agents);
                 List<Good> goods = new List<Good>() {
-                    new Good() { Description = "default", Measure = Constants.MeasureCount,
+                    new Good() { 
+                        Description = "Відро містке, ручка залізна", 
+                        Measure = Constants.MeasureCount,
                         Name="Відро 10л залізне",
                         Percent = Constants.DefaultPercent,
                         Price = 20.0,
-                        Producer = "ТОВ АГРОМОЛ",
+                        Producer = "Фабрика транш",
                     },
                     new Good() {
-                        Description = "default",
+                        Description = "Граблі гарної комплектації з держаком",
                         Measure = Constants.MeasureCount,
                         Name = "Граблі пластмасові",
                         Percent = Constants.DefaultPercent,
@@ -81,100 +87,122 @@ namespace WarehouseShop
                         Percent = Constants.DefaultPercent,
                         Price = 43.0,
                         Producer = "Фабрика Господар",
+                    }, new Good() {
+                        Description = "Чорний колір, 8мм",
+                        Measure = Constants.MeasureVeight,
+                        Name = "Цвях залізний 8мм",
+                        Percent = Constants.DefaultPercent,
+                        Price = 1.0,
+                        Producer = "Залізометробуд",
+                    }, new Good() {
+                        Description = "Ланцюг 50мм одне кільце, ціна за метр",
+                        Measure = Constants.MeasureWidth,
+                        Name = "Ланцюг 50мм",
+                        Percent = Constants.DefaultPercent,
+                        Price = 2.0,
+                        Producer = "Залізометробуд",
+                    }, new Good() {
+                        Description = "Мотузка, 20мм діаметр, 4 волокна в основі, лляна",
+                        Measure = Constants.MeasureWidth,
+                        Name = "Мотузка 20мм",
+                        Percent = Constants.DefaultPercent,
+                        Price = 3.50,
+                        Producer = "Добра марка",
+                    }, new Good() {
+                        Description = "Петлі для дверей, звичайні",
+                        Measure = Constants.MeasureCount,
+                        Name = "Петлі",
+                        Percent = Constants.DefaultPercent,
+                        Price = 21.50,
+                        Producer = "Залізометробуд",
                     }
                 };
                 db.AddRange(goods);
                 List<Warehouse> warehouses = new List<Warehouse>() {
                     new Warehouse() {
-                        Name = "warehouse 1",
-                        Location = "location 1"
+                        Name = "Склад 1",
+                        Location = "Точка 1"
                     },
                     new Warehouse() {
-                        Name = "warehouse 2",
-                        Location = "location 2"
+                        Name = "Склад 2",
+                        Location = "Точка 2, схід"
                     }
                 };
                 db.AddRange(warehouses);
                 db.SaveChanges();
-                db.AddRange(new StockBalance()
+                List<StockBalance> stocks = new List<StockBalance>();
+                for(int war = 0; war < 2; ++war)
                 {
-                    Count = 300,
-                    Warehouse = warehouses[0],
-                    Good = goods[0]
-                }, new StockBalance()
-                {
-                    Count = 200,
-                    Warehouse = warehouses[0],
-                    Good = goods[1]
-                }, new StockBalance()
-                {
-                    Count = 1000,
-                    Warehouse = warehouses[0],
-                    Good = goods[2]
-                }, new StockBalance()
-                {
-                    Count = 30,
-                    Warehouse = warehouses[1],
-                    Good = goods[3]
-                });
-                List<Operation> operations = new List<Operation>() {
-                    new Operation() {
-                        Agent = agents[0],
-                        DateOperation = new DateTime(DateTime.Now.Ticks - 1000 * 360 * 24 * 5),
-                        TypeOperation = Constants.TypeOperationGain,
-                    }, new Operation() {
-                        Agent = agents[1],
-                        DateOperation = new DateTime(DateTime.Now.Ticks - 1000 * 360 * 24 * 4),
-                        TypeOperation = Constants.TypeOperationGain,
-                    }, new Operation() {
-                        Agent = agents[0],
-                        DateOperation = new DateTime(DateTime.Now.Ticks - 1000 * 360 * 24 * 3),
-                        TypeOperation = Constants.TypeOperationSold,
+                    int index = 1; 
+                    foreach(var g in goods)
+                    {
+                        var new_sb = new StockBalance()
+                        {
+                            Count = 10 * index * (war + 1),
+                            Warehouse = warehouses[war],
+                            Good = g
+                        };
+                        db.Add(new_sb);
+                        stocks.Add(new_sb);
+                        index = (index + 1) % 6; 
                     }
-                };
+                    
+                }
+                List<Operation> operations = new List<Operation>();
+                for(int index = 0; index < 10; ++index)
+                {
+                    for(int indexAgent = 0; indexAgent < agents.Count; ++indexAgent)
+                    {
+                        operations.Add(new Operation()
+                        {
+                            Agent = agents[indexAgent],
+                            DateOperation = new DateTime(DateTime.Now.Ticks - 1000 * 360 * 24 * (30 - index + indexAgent)),
+                            TypeOperation = index % 2 == 0 ? Constants.TypeOperationSold : Constants.TypeOperationGain,
+                        });
+                    }
+                }
+
                 db.AddRange(operations);
                 db.SaveChanges();
-                db.AddRange(new GoodOperation()
+                for(int index = 0; index < operations.Count; ++index)
                 {
-                    Count = 1,
-                    FullPrice = (goods[0].Percent + 1) * goods[0].Price,
-                    Price = goods[0].Price,
-                    Operation = operations[0],
-                    Warehouse = warehouses[0],
-                    Good = goods[0]
-                }, new GoodOperation()
-                {
-                    Count = 3,
-                    FullPrice = (goods[0].Percent + 1) * goods[0].Price * 3,
-                    Price = goods[0].Price * 3,
-                    Operation = operations[1],
-                    Warehouse = warehouses[0],
-                    Good = goods[0]
-                }, new GoodOperation()
-                {
-                    Count = 3,
-                    FullPrice = (goods[1].Percent + 1) * goods[1].Price * 3,
-                    Price = goods[0].Price * 3,
-                    Operation = operations[1],
-                    Warehouse = warehouses[1],
-                    Good = goods[1]
-                }, new GoodOperation()
-                {
-                    Count = 3.5,
-                    FullPrice = (goods[2].Percent + 1) * goods[2].Price * 3.5,
-                    Price = goods[2].Price * 3.5,
-                    Operation = operations[2],
-                    Warehouse = warehouses[1],
-                    Good = goods[2]
-                }, new GoodOperation()
-                {
-                    Count = 10.5,
-                    FullPrice = (goods[3].Percent + 1) * goods[3].Price * 10.5,
-                    Price = goods[3].Price * 10.5,
-                    Operation = operations[2],
-                    Warehouse = warehouses[1],
-                    Good = goods[3]
-                });
+                    var op = operations[index];
+                    int countProducts = index % 5;
+                    for(int gpIndex = 0; gpIndex < countProducts; ++gpIndex)
+                    {
+                        var sb = stocks[(gpIndex + index) % stocks.Count];
+                        var g = sb.Good;
+                        var count = gpIndex * 2 + index;
+                        if(op.TypeOperation == Constants.TypeOperationGain)
+                        {
+                            count += 10 * gpIndex;
+                            sb.Count += count;
+                        }
+                        db.Add(new GoodOperation()
+                        {
+                            Count = count,
+                            FullPrice = (g.Percent + 1) * g.Price * count,
+                            Price = g.Price * count,
+                            Operation = op,
+                            Warehouse = sb.Warehouse,
+                            Good = g
+                        });
+                    }
+                }
+                db.UpdateRange(stocks);
+                db.SaveChanges();
+            }
+        }
+        private void DeleteAll()
+        {
+            using(var db = new GoodContext())
+            {
+                db.RemoveRange(db.StockBalances);
+                db.RemoveRange(db.Warehouses);
+                db.RemoveRange(db.GoodOperations);
+                db.RemoveRange(db.Goods);
+                db.RemoveRange(db.Agents);
+                db.RemoveRange(db.Operations);
                 db.SaveChanges();
             }
         }
@@ -184,37 +212,6 @@ namespace WarehouseShop
             await ToExcel.Some(vm.Reports);
         }
 
-        //private void dg_Sorting(object sender, DataGridColumnEventArgs e)
-        //{
-        //    //Use the Tag property to pass the bound column name for the sorting implementation 
-        //    if(e.Column.Tag.ToString() == "Range")
-        //    {
-        //        //Implement sort on the column "Range" using LINQ
-        //        if(e.Column.SortDirection == null || e.Column.SortDirection == DataGridSortDirection.Descending)
-        //        {
-        //            dg.ItemsSource = new ObservableCollection(from item in _items
-        //                                                      orderby item.Range ascending
-        //                                                      select item);
-        //            e.Column.SortDirection = DataGridSortDirection.Ascending;
-        //        }
-        //        else
-        //        {
-        //            dg.ItemsSource = new ObservableCollection(from item in _items
-        //                                                      orderby item.Range descending
-        //                                                      select item);
-        //            e.Column.SortDirection = DataGridSortDirection.Descending;
-        //        }
-        //    }
-        //    // add code to handle sorting by other columns as required
-
-        //    // Remove sorting indicators from other columns
-        //    foreach(var dgColumn in dg.Columns)
-        //    {
-        //        if(dgColumn.Tag.ToString() != e.Column.Tag.ToString())
-        //        {
-        //            dgColumn.SortDirection = null;
-        //        }
-        //    }
-        //}
+       
     }
 }

@@ -66,6 +66,7 @@ namespace WarehouseShop.ViewModels
             get => selectedVariant; set
             {
 
+                
                 Set(ref selectedVariant, value);
                 SelectedTemplate.Clear();
                 Add(SelectedTemplate, dict[value.Variant]);
@@ -80,6 +81,11 @@ namespace WarehouseShop.ViewModels
         }
         private int selectedGlobalRowIndex = -1;
 
+        public int RowSpan
+        {
+            get => rowSpan; set => Set(ref rowSpan, value);
+        }
+        private int rowSpan = 1;
         public Observable SelectedRow
         {
             get => selectedRow; set
@@ -531,11 +537,12 @@ namespace WarehouseShop.ViewModels
             Suggestions.Clear();
             var candidates = StockBalances.Where(o => Regex.IsMatch(o.Count.ToString().ToLower(), param.ToLower()));
             var candidatesByLocation = StockBalances.Where(o => Regex.IsMatch(o.Good.Name.ToLower(), param.ToLower()));
+            var candidatesByWareHouse = StockBalances.Where(o => Regex.IsMatch(o.Warehouse.Name.ToLower(), param.ToLower()));
 
             Add(Suggestions, candidates.Select(o => o.Count.ToString()).Distinct());
             Add(Suggestions, candidatesByLocation.Select(o => o.Good.Name).Distinct());
-
-            return candidates.Union(candidatesByLocation);
+            Add(Suggestions, candidatesByWareHouse.Select(o => o.Warehouse.Name).Distinct());
+            return candidates.Union(candidatesByLocation).Union(candidatesByWareHouse);
         }
 
         private void InitVariants()

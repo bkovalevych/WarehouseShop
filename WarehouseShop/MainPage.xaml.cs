@@ -35,9 +35,10 @@ namespace WarehouseShop
             this.InitializeComponent();
 
             this.Loaded += MainPage_Loaded;
-            vm = new BaseVM(Resources, mainGrid.Columns);
+            vm = new BaseVM(Resources, mainGrid.Columns, lowGrid.Columns);
             DeleteAll();
             AddData();
+            vm.UpdateFromDBCommand.Execute(null);
         }
 
         private void MainPage_Loaded(object sender, RoutedEventArgs e)
@@ -156,7 +157,7 @@ namespace WarehouseShop
                         operations.Add(new Operation()
                         {
                             Agent = agents[indexAgent],
-                            DateOperation = new DateTime(DateTime.Now.Ticks - 1000 * 360 * 24 * (30 - index + indexAgent)),
+                            DateOperation = new DateTime(DateTime.Now.Ticks - 100000000L * 360 * 24 * (30 - index + indexAgent)),
                             TypeOperation = index % 2 == 0 ? Constants.TypeOperationSold : Constants.TypeOperationGain,
                         });
                     }

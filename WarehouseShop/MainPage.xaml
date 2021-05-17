@@ -87,10 +87,17 @@
 
         <controls:DataGrid Grid.Row="2" 
                            ItemsSource="{x:Bind vm.LowLevel, Mode=TwoWay}" 
-                           AutoGenerateColumns="True"
-                           
+                           AutoGenerateColumns="False"
+                           x:Name="lowGrid"
+                           SelectedIndex="{x:Bind vm.SelectedRowIndex, Mode=TwoWay}"
+                           SelectedItem="{x:Bind vm.SelectedLowLevelRow, Mode=TwoWay}"
                            >
-            
+            <controls:DataGrid.ContextFlyout>
+                <MenuFlyout>
+                    <MenuFlyoutItem Text="Додати на нижньому рівні" Icon="Add" Command="{x:Bind vm.AddLowLevelEntityCommand}"/>
+                    <MenuFlyoutItem Text="Видалити на нижньому рівні" Icon="Delete" Command="{x:Bind vm.DeleteLowLevelCommand}" />
+                </MenuFlyout>
+            </controls:DataGrid.ContextFlyout>
         </controls:DataGrid>
         <StackPanel 
             Grid.Row="3"

@@ -65,21 +65,34 @@ namespace WarehouseShop.ViewModels
         {
             get => selectedVariant; set
             {
-
-                
                 Set(ref selectedVariant, value);
                 SelectedTemplate.Clear();
+                LowLevelTemplate.Clear();
                 Add(SelectedTemplate, dict[value.Variant]);
+                Add(LowLevelTemplate, lowLevelDict[value.Variant]);
             }
         }
         private ItemChoose selectedVariant;
-        private Dictionary<String, ObservableCollection<DataGridColumn>> dict;
-
+        private Dictionary<string, ObservableCollection<DataGridColumn>> dict;
+        private Dictionary<string, ObservableCollection<DataGridColumn>> lowLevelDict;
         public int SelectedGlobalRowIndex
         {
             get => selectedGlobalRowIndex; set => Set(ref selectedGlobalRowIndex, value);
         }
         private int selectedGlobalRowIndex = -1;
+
+        public int SelectedRowIndex
+        {
+            get => seletedLowLevelIndex;
+            set => Set(ref seletedLowLevelIndex, value);
+        }
+        private int seletedLowLevelIndex = -1;
+        public Observable SelectedLowLevelRow
+        {
+            get => selectedLowLevelRow;
+            set => Set(ref selectedLowLevelRow, value);
+        }
+        private Observable selectedLowLevelRow;
 
         public int RowSpan
         {
@@ -104,7 +117,6 @@ namespace WarehouseShop.ViewModels
                 }
                 else if(value is GoodOperation gp)
                 {
-                    gp.PropertyChanged += Gp_PropertyChanged;
                     if(gp.WarehouseId != 0)
                     {
                         AppropriateGoods.Clear();
@@ -116,7 +128,7 @@ namespace WarehouseShop.ViewModels
                                 AppropriateGoods.Add(sb.Good);
                             });
                         }
-                    }
+                    }   
                 }
                 else
                 {
@@ -126,6 +138,8 @@ namespace WarehouseShop.ViewModels
             }
         }
 
+        private Observable selectedRow;
+        
         private void Gp_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
             if(e.PropertyName == "WarehouseId")
@@ -167,21 +181,37 @@ namespace WarehouseShop.ViewModels
             }
         }
 
-        private Observable selectedRow;
+        
         public ICommand SaveAllCommand => new RelayCommand(SaveAll);
         private void SaveAll()
         {
             using(GoodContext db = new GoodContext())
             {
-                db.UpdateRange(Agents);
-                db.UpdateRange(Goods);
-                db.UpdateRange(Operations);
-                db.UpdateRange(Warehouses);
-                db.UpdateRange(StockBalances);
-                db.UpdateRange(GoodOperations);
                 db.AddRange(needAdd);
+                try
+                {
+                    db.SaveChanges();
+                }
+                catch(Exception e)
+                {
+                    Trace.WriteLine(e.Message);
+                }
+                db.GoodOperations.UpdateRange(GoodOperations.Where(o => !needAdd.Contains(o)));
+                db.StockBalances.UpdateRange(StockBalances);
+                db.Operations.UpdateRange(Operations.Where(o => !needAdd.Contains(o)));
+                db.Agents.UpdateRange(Agents);
+                db.Goods.UpdateRange(Goods);
+                db.Warehouses.UpdateRange(Warehouses);
                 db.RemoveRange(needDelete);
-                db.SaveChangesAsync();
+                try
+                {
+                    db.SaveChanges();
+                } catch (Exception e)
+                {
+                    Trace.WriteLine(e.Message);
+                }
+                
+                
             }
         }
 
@@ -190,6 +220,9 @@ namespace WarehouseShop.ViewModels
 
         public ObservableCollection<DataGridColumn> SelectedTemplate => selectedTemplate;
         private readonly ObservableCollection<DataGridColumn> selectedTemplate;
+        private ObservableCollection<DataGridColumn> lowLevelTemplate;
+        public ObservableCollection<DataGridColumn> LowLevelTemplate => lowLevelTemplate;
+
         private List<Observable> needAdd = new List<Observable>();
         public IEnumerable<object> LowLevel
         {
@@ -208,7 +241,7 @@ namespace WarehouseShop.ViewModels
             }
             else if(selectedVariant.Val is ObservableCollection<Operation> operation)
             {
-                var new_val = new Operation();
+                var new_val = new Operation() { GoodOperations = new ObservableCollection<GoodOperation>()};
                 needAdd.Add(new_val);
                 operation.Insert(0, new_val);
             }
@@ -237,6 +270,78 @@ namespace WarehouseShop.ViewModels
                 stockBalance.Insert(0, new_val);
             }
             SelectedGlobalRowIndex = 0;
+        }
+        public ICommand AddLowLevelEntityCommand => new RelayCommand(AddLowLevelEntity);
+        private void AddLowLevelEntity()
+        {
+            if(selectedRow is Agent a)
+            {
+                var new_val = new Operation() { 
+                    Agent = a, 
+                    AgentId = a.AgentId, 
+                    DateOperation = DateTime.Now, 
+                    GoodOperations = new ObservableCollection<GoodOperation>(),
+                    TypeOperation= Constants.TypeOperationGain
+                };
+                if(a.Operations == null)
+                {
+                    a.Operations = new ObservableCollection<Operation>();
+                }
+                a.Operations.Insert(0, new_val);
+                Operations.Insert(0, new_val);
+                needAdd.Add(new_val);
+            }
+            else if(selectedRow is Operation operation)
+            {
+                var new_val = new GoodOperation() {
+                    Warehouse = Warehouses[0],
+                    WarehouseId = Warehouses[0].WarehouseId,
+                    Operation = operation,
+                    OperationId = operation.OperationId
+                };
+                needAdd.Add(new_val);
+                GoodOperations.Insert(0, new_val);
+                if(operation.GoodOperations == null)
+                {
+                    operation.GoodOperations = new ObservableCollection<GoodOperation>();
+                }
+                new_val.PropertyChanged += Gp_PropertyChanged;
+                operation.GoodOperations.Insert(0, new_val);
+            }
+            else if(selectedRow is Warehouse warehouse)
+            {
+                var new_val = new StockBalance() {
+                     Warehouse = warehouse,
+                     WarehouseId = warehouse.WarehouseId
+                };
+                needAdd.Add(new_val);
+                StockBalances.Insert(0, new_val);
+                if(warehouse.StockBalances == null)
+                {
+                    warehouse.StockBalances = new ObservableCollection<StockBalance>();
+                }
+                warehouse.StockBalances.Insert(0, new_val);
+            }
+            //else if(selectedVariant.Val is ObservableCollection<Good> good)
+            //{
+            //    var new_val = new Good();
+            //    needAdd.Add(new_val);
+            //    good.Insert(0, new_val);
+            //}
+            //else if(selectedVariant.Val is ObservableCollection<GoodOperation> goodOperation)
+            //{
+            //    var new_val = new GoodOperation();
+            //    needAdd.Add(new_val);
+            //    goodOperation.Insert(0, new_val);
+            //}
+
+            //else if(selectedVariant.Val is ObservableCollection<StockBalance> stockBalance)
+            //{
+            //    var new_val = new StockBalance();
+            //    needAdd.Add(new_val);
+            //    stockBalance.Insert(0, new_val);
+            //}
+            SelectedRowIndex = 0;
         }
         private ResourceDictionary r;
         private void UpdateAll()
@@ -273,6 +378,7 @@ namespace WarehouseShop.ViewModels
                 Add(Reports, query);
                 MinStockBalances.Clear();
                 Add(MinStockBalances, StockBalances.Where(o => o.Count <= 50));
+                GoodOperations.ToList().ForEach(gp => gp.PropertyChanged += Gp_PropertyChanged);
             }
         }
         private void Add<T>(ObservableCollection<T> src, IEnumerable<T> list)
@@ -318,6 +424,42 @@ namespace WarehouseShop.ViewModels
             }
         }
 
+        public ICommand DeleteLowLevelCommand => new RelayCommand(DeleteLow);
+
+        private void DeleteLow()
+        {
+            if(selectedLowLevelRow != null)
+            {
+                needDelete.Add(selectedLowLevelRow);
+                if(selectedLowLevelRow is Agent a)
+                {
+                    Agents.Remove(a);
+                }
+                else if(selectedLowLevelRow is Operation op)
+                {
+                    (SelectedRow as Agent).Operations.Remove(op);
+                    Operations.Remove(op);
+                }
+                else if(selectedLowLevelRow is Good g)
+                {
+                    Goods.Remove(g);
+                }
+                else if(selectedLowLevelRow is GoodOperation go)
+                {
+                    (SelectedRow as Operation).GoodOperations.Remove(go);
+                    GoodOperations.Remove(go);
+                }
+                else if(selectedLowLevelRow is Warehouse w)
+                {
+                    Warehouses.Remove(w);
+                }
+                else if(selectedLowLevelRow is StockBalance s)
+                {
+                    (SelectedRow as Warehouse).StockBalances.Remove(s);
+                    StockBalances.Remove(s);
+                }
+            }
+        }
         private void InitCollections()
         {
             Warehouses = new ObservableCollection<Warehouse>();
@@ -329,8 +471,9 @@ namespace WarehouseShop.ViewModels
             Reports = new ObservableCollection<Report>();
         }
 
-        public BaseVM(ResourceDictionary r, ObservableCollection<DataGridColumn> cols)
+        public BaseVM(ResourceDictionary r, ObservableCollection<DataGridColumn> cols, ObservableCollection<DataGridColumn> lowLevelCols)
         {
+            lowLevelTemplate = lowLevelCols;
             selectedTemplate = cols;
             this.r = r;
             InitCollections();
@@ -615,6 +758,17 @@ namespace WarehouseShop.ViewModels
                BCol("PriceSum", true),
                BCol("FullPriceSum", true)
             });
+            lowLevelDict = new Dictionary<string, ObservableCollection<DataGridColumn>>()
+            {
+                ["Агент"] = dict["Операція"],
+                ["Склад"] = dict["Залишок"],
+                ["Звіт"] = new ObservableCollection<DataGridColumn>(),
+                ["Залишок"] = new ObservableCollection<DataGridColumn>(),
+                ["Мінімальний залишок"] = new ObservableCollection<DataGridColumn>(),
+                ["Операція"] = dict["Товар в операції"],
+                ["Товар"] = new ObservableCollection<DataGridColumn>(),
+                ["Товар в операції"] = new ObservableCollection<DataGridColumn>(),
+            };
             SelectedVariant = Variants[0];
         }
 
@@ -697,8 +851,6 @@ namespace WarehouseShop.ViewModels
                                     );
                                 break;
                         }
-                          
-                            
                         break;
                 }
             }

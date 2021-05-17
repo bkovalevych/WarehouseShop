@@ -16,8 +16,9 @@ namespace WarehouseShop.Entities
         private int id;
         public int GoodId
         {
-            get; set;
+            get => goodId; set => Set(ref goodId, value);
         }
+        private int goodId;
         public Good Good
         {
             get => good; set => Set(ref good, value);
@@ -25,8 +26,9 @@ namespace WarehouseShop.Entities
         private Good good;
         public int WarehouseId
         {
-            get; set;
+            get => warehouseId; set => Set(ref warehouseId, value);
         }
+        private int warehouseId;
         public Warehouse Warehouse
         {
             get => warehouse; set => Set(ref warehouse, value);

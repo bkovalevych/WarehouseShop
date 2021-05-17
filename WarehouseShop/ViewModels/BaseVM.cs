@@ -379,8 +379,39 @@ namespace WarehouseShop.ViewModels
                 MinStockBalances.Clear();
                 Add(MinStockBalances, StockBalances.Where(o => o.Count <= 50));
                 GoodOperations.ToList().ForEach(gp => gp.PropertyChanged += Gp_PropertyChanged);
+                StockBalances.ToList().ForEach(sb => sb.PropertyChanged += Sb_PropertyChanged);
             }
         }
+
+        private void Sb_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            var sb = sender as StockBalance;
+            if(sb.GoodId != 0 && (sb.Good == null || sb.Good.GoodId != sb.GoodId))
+            {
+                var appGoods = Goods.Where(g => g.GoodId == sb.GoodId).ToList();
+                if(sb.Good != null)
+                {
+                    sb.Good.StockBalances.Remove(sb);
+                }
+                if(appGoods.Count > 0)
+                {
+                    sb.Good = appGoods[0];
+                }
+            }
+            if(sb.WarehouseId != 0 && (sb.Warehouse == null || sb.Warehouse.WarehouseId != sb.WarehouseId))
+            {
+                var appWarehouses = Warehouses.Where(g => g.WarehouseId == sb.WarehouseId).ToList();
+                if(sb.Warehouse != null)
+                {
+                    sb.Warehouse.StockBalances.Remove(sb);
+                }
+                if(appWarehouses.Count > 0)
+                {
+                    sb.Warehouse = appWarehouses[0];
+                }
+            }
+        }
+
         private void Add<T>(ObservableCollection<T> src, IEnumerable<T> list)
         {
             foreach(var e in list)
